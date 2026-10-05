@@ -18,6 +18,14 @@ apt-get install -y \
     libpq-dev \
     build-essential
 
+# Aguarda o RDS ficar disponível (pode levar alguns segundos)
+sleep 10
+
+# Cria o banco de dados se não existir
+export PGPASSWORD="f7a901f4eab8b92f0b1b2ea6"
+psql -h dspn-projeto-db-instance.cmaxzh1hz8ka.us-east-1.rds.amazonaws.com -U admin -d postgres -c "CREATE DATABASE ingressos;" 2>/dev/null || echo "Banco já existe ou erro ao criar"
+unset PGPASSWORD
+
 # 2. Prepara o diretório e clona o repositório de forma 100% segura
 cd /opt
 rm -rf app # Garante que a pasta está limpa para o clone
@@ -41,12 +49,11 @@ fi
 
 # 5. Configura o arquivo .env
 cat > /opt/app/backend/.env << 'EOF'
-DATABASE_URL=postgresql+psychopg://postgres:f7a901f4eab8b92f0b1b2ea6@ddspn-projeto-db-instance.cmaxzh1hz8ka.us-east-1.rds.amazonaws.co:5432/ingressos
+DATABASE_URL=postgresql+psycopg://postgres:f7a901f4eab8b92f0b1b2ea6@dspn-projeto-db-instance.cmaxzh1hz8ka.us-east-1.rds.amazonaws.com:5432/ingressos
 REDIS_URL=redis://master.dspn-projeto-cache.qjtido.use1.cache.amazonaws.com:6379
 S3_BUCKET=backend-309843684442-us-east-1-an
 SNS_TOPIC_ARN=arn:aws:sns:us-east-1:309843684442:dspn-projeto-sns
 AWS_REGION=us-east-1
-ENVIRONMENT=production
 EOF
 
 chown appuser:appuser /opt/app/backend/.env

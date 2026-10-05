@@ -40,9 +40,8 @@ else
 fi
 
 # 5. Configura o arquivo .env
-# ⚠️ IMPORTANTE: Substitua os valores abaixo pelos seus endpoints REAIS antes de usar!
 cat > /opt/app/backend/.env << 'EOF'
-DATABASE_URL=postgresql://postgres+psychopg:f7a901f4eab8b92f0b1b2ea6@ddspn-projeto-db-instance.cmaxzh1hz8ka.us-east-1.rds.amazonaws.co:5432/ingressos
+DATABASE_URL=postgresql+psychopg://postgres:f7a901f4eab8b92f0b1b2ea6@ddspn-projeto-db-instance.cmaxzh1hz8ka.us-east-1.rds.amazonaws.co:5432/ingressos
 REDIS_URL=redis://master.dspn-projeto-cache.qjtido.use1.cache.amazonaws.com:6379
 S3_BUCKET=backend-309843684442-us-east-1-an
 SNS_TOPIC_ARN=arn:aws:sns:us-east-1:309843684442:dspn-projeto-sns

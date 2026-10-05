@@ -1,20 +1,13 @@
 #!/bin/bash
-set -e
+# Garante que o script pare em qualquer erro e loga cada comando executado
+set -ex
 
-# ============================================
-# User Data - Backend FastAPI (Sistema Ingressos)
-# ============================================
-
-# Log para debug
 exec > >(tee /var/log/user-data.log) 2>&1
 echo "=== Iniciando setup do backend: $(date) ==="
 
-# Atualiza pacotes
+# 1. Atualiza e instala dependências do sistema
 export DEBIAN_FRONTEND=noninteractive
 apt-get update -y
-apt-get upgrade -y
-
-# Instala dependências
 apt-get install -y \
     python3-pip \
     python3-venv \
@@ -25,34 +18,34 @@ apt-get install -y \
     libpq-dev \
     build-essential
 
-# Cria usuário da aplicação
+# 2. Prepara o diretório e clona o repositório de forma 100% segura
+cd /opt
+rm -rf app # Garante que a pasta está limpa para o clone
+git clone https://github.com/matheussdc/dev-nuvem.git app
+
+# 3. Cria usuário e define permissões
 useradd -m -s /bin/bash appuser || true
-
-# Cria diretório da aplicação
-mkdir -p /opt/app
-cd /opt/app
-
-# Clona o repositório (ajuste a URL)
-git clone https://github.com/matheussdc/dev-nuvem.git . || echo "Repo já existe"
 chown -R appuser:appuser /opt/app
 
-# Cria virtual environment
+# 4. Cria e popula o virtual environment
 sudo -u appuser python3 -m venv /opt/app/venv
-
-# Instala dependências do backend
 sudo -u appuser /opt/app/venv/bin/pip install --upgrade pip
-sudo -u appuser /opt/app/venv/bin/pip install -r /opt/app/backend/requirements.txt
 
-# ============================================
-# Configuração de Variáveis de Ambiente
-# ============================================
-# ⚠️ SUBSTITUA OS VALORES ABAIXO PELOS SEUS ENDPOINTS REAIS!
+# Verifica se o requirements.txt existe antes de instalar (segurança extra)
+if [ -f /opt/app/backend/requirements.txt ]; then
+    sudo -u appuser /opt/app/venv/bin/pip install -r /opt/app/backend/requirements.txt
+else
+    echo "ERRO CRÍTICO: /opt/app/backend/requirements.txt não encontrado!"
+    exit 1
+fi
 
+# 5. Configura o arquivo .env
+# ⚠️ IMPORTANTE: Substitua os valores abaixo pelos seus endpoints REAIS antes de usar!
 cat > /opt/app/backend/.env << 'EOF'
-DATABASE_URL=
-REDIS_URL=
-S3_BUCKET=
-SNS_TOPIC_ARN=
+DATABASE_URL=postgresql://admin:SUA_SENHA_AQUI@dspn-projeto-db-instance.XXXXXX.us-east-1.rds.amazonaws.com:5432/ingressos
+REDIS_URL=redis://master.dspn-projeto-cache.qjtido.use1.cache.amazonaws.com:6379
+S3_BUCKET=backend-309843684442-us-east-1-an
+SNS_TOPIC_ARN=arn:aws:sns:us-east-1:309843684442:dspn-projeto-sns
 AWS_REGION=us-east-1
 ENVIRONMENT=production
 EOF
@@ -60,9 +53,7 @@ EOF
 chown appuser:appuser /opt/app/backend/.env
 chmod 600 /opt/app/backend/.env
 
-# ============================================
-# Systemd Service para o FastAPI
-# ============================================
+# 6. Cria o serviço systemd
 cat > /etc/systemd/system/backend.service << 'EOF'
 [Unit]
 Description=Backend FastAPI - Sistema de Ingressos
@@ -83,15 +74,12 @@ StandardError=journal
 WantedBy=multi-user.target
 EOF
 
-# ============================================
-# Nginx como Reverse Proxy (porta 80 → 8000)
-# ============================================
+# 7. Configura o Nginx como Reverse Proxy
 cat > /etc/nginx/sites-available/backend << 'EOF'
 server {
     listen 80;
     server_name _;
 
-    # Health check para ALB
     location /health {
         proxy_pass http://127.0.0.1:8000/health;
         proxy_set_header Host $host;
@@ -99,7 +87,6 @@ server {
         access_log off;
     }
 
-    # API
     location / {
         proxy_pass http://127.0.0.1:8000;
         proxy_set_header Host $host;
@@ -117,13 +104,9 @@ nginx -t
 systemctl restart nginx
 systemctl enable nginx
 
-# ============================================
-# Inicia o Backend
-# ============================================
+# 8. Inicia o Backend
 systemctl daemon-reload
 systemctl enable backend
 systemctl start backend
 
-echo "=== Setup concluído: $(date) ==="
-echo "Backend rodando em http://localhost:8000"
-echo "Health check: http://localhost:8000/health"
+echo "=== Setup concluído com SUCESSO: $(date) ==="

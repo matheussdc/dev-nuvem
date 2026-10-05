@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teste de Integração AWS</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 { color: #232f3e; }
+        .upload-area {
+            border: 2px dashed #ff9900;
+            padding: 40px;
+            text-align: center;
+            border-radius: 10px;
+            margin: 20px 0;
+            background: #fff8ef;
+        }
+        input[type="file"] { margin: 20px 0; }
+        button {
+            background: #ff9900;
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            font-size: 16px;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        button:hover { background: #ec7211; }
+        button:disabled { background: #ccc; cursor: not-allowed; }
+        .status {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 5px;
+            display: none;
+        }
+        .status.success { background: #d4edda; color: #155724; display: block; }
+        .status.error { background: #f8d7da; color: #721c24; display: block; }
+        .status.info { background: #d1ecf1; color: #0c5460; display: block; }
+        .images {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-top: 30px;
+        }
+        .image-box {
+            text-align: center;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 8px;
+        }
+        .image-box img {
+            max-width: 100%;
+            max-height: 300px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        .spinner {
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #ff9900;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            animation: spin 1s linear infinite;
+            margin: 10px auto;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧪 Teste de Integração AWS</h1>
+        <p>Este teste valida o fluxo completo: <strong>Upload → Backend → SNS → Lambda → S3</strong></p>
+
+        <div class="upload-area">
+            <h3>1. Envie uma imagem</h3>
+            <input type="file" id="fileInput" accept="image/*">
+            <br>
+            <button onclick="uploadImage()" id="uploadBtn">Enviar Imagem</button>
+        </div>
+
+        <div id="status" class="status"></div>
+
+        <div class="images" id="imagesContainer" style="display: none;">
+            <div class="image-box">
+                <h4>Imagem Original</h4>
+                <img id="originalImage" src="">
+            </div>
+            <div class="image-box">
+                <h4>Imagem Rotacionada (Lambda)</h4>
+                <div id="processedLoader" style="display: none;">
+                    <div class="spinner"></div>
+                    <p>Processando...</p>
+                </div>
+                <img id="processedImage" src="" style="display: none;">
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = 'http://dspn-projeto-alb-4a70f448c4c7036d.elb.us-east-1.amazonaws.com';
+
+        function showStatus(message, type) {
+            const status = document.getElementById('status');
+            status.textContent = message;
+            status.className = 'status ' + type;
+        }
+
+        async function uploadImage() {
+            const fileInput = document.getElementById('fileInput');
+            const uploadBtn = document.getElementById('uploadBtn');
+
+            if (!fileInput.files[0]) {
+                showStatus('❌ Selecione uma imagem primeiro!', 'error');
+                return;
+            }
+
+            const file = fileInput.files[0];
+            const formData = new FormData();
+            formData.append('file', file);
+
+            uploadBtn.disabled = true;
+            showStatus('📤 Enviando imagem para o backend...', 'info');
+
+            try {
+                const response = await fetch(`${API_URL}/upload`, {
+                    method: 'POST',
+                    body: formData
+                });
+
+                if (!response.ok) throw new Error(`HTTP ${response.status}`);
+
+                const data = await response.json();
+                console.log('Resposta do backend:', data);
+
+                showStatus('✅ Imagem enviada! Backend publicou no SNS. Aguardando Lambda processar...', 'success');
+
+                // Mostra imagem original
+                document.getElementById('originalImage').src = data.original_url;
+                document.getElementById('imagesContainer').style.display = 'grid';
+                document.getElementById('processedLoader').style.display = 'block';
+                document.getElementById('processedImage').style.display = 'none';
+
+                // Polling para verificar se o Lambda processou
+                pollProcessedImage(data.processed_key);
+
+            } catch (error) {
+                showStatus(`❌ Erro: ${error.message}`, 'error');
+                uploadBtn.disabled = false;
+            }
+        }
+
+        async function pollProcessedImage(processedKey) {
+            const maxAttempts = 30; // 30 tentativas
+            let attempts = 0;
+
+            const interval = setInterval(async () => {
+                attempts++;
+                try {
+                    const response = await fetch(`${API_URL}/image/${encodeURIComponent(processedKey)}`);
+
+                    if (response.ok) {
+                        const data = await response.json();
+                        clearInterval(interval);
+
+                        document.getElementById('processedLoader').style.display = 'none';
+                        document.getElementById('processedImage').src = data.url;
+                        document.getElementById('processedImage').style.display = 'block';
+                        document.getElementById('uploadBtn').disabled = false;
+
+                        showStatus('✅ Fluxo completo validado! Lambda processou a imagem com sucesso.', 'success');
+                        return;
+                    }
+                } catch (e) {
+                    console.log('Ainda processando...');
+                }
+
+                if (attempts >= maxAttempts) {
+                    clearInterval(interval);
+                    showStatus('⚠️ Timeout: Lambda não processou em 30s. Verifique os logs do Lambda no CloudWatch.', 'error');
+                    document.getElementById('uploadBtn').disabled = false;
+                }
+            }, 1000); // Verifica a cada 1 segundo
+        }
+    </script>
+</body>
+</html>

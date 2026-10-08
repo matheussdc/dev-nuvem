@@ -13,7 +13,7 @@ mkdir -p /opt/worker
 cd /opt/worker
 
 # Clona o repositório
-git clone https://github.com/SEU_USUARIO/sistema-ingressos.git .
+git clone https://github.com/matheussdc/dev-nuvem.git .
 
 # Cria virtual environment
 python3 -m venv venv

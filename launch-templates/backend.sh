@@ -18,13 +18,7 @@ apt-get install -y \
     libpq-dev \
     build-essential
 
-# Aguarda o RDS ficar disponível (pode levar alguns segundos)
-sleep 10
-
-# Cria o banco de dados se não existir
-export PGPASSWORD="f7a901f4eab8b92f0b1b2ea6"
-psql -h dspn-projeto-db-instance.cmaxzh1hz8ka.us-east-1.rds.amazonaws.com -U admin -d postgres -c "CREATE DATABASE ingressos;" 2>/dev/null || echo "Banco já existe ou erro ao criar"
-unset PGPASSWORD
+# O banco "ingressos" é criado pelo RDS (Initial database name); as tabelas, pela API ao iniciar.
 
 # 2. Prepara o diretório e clona o repositório de forma 100% segura
 cd /opt
@@ -53,6 +47,8 @@ DATABASE_URL=postgresql+psycopg://postgres:f7a901f4eab8b92f0b1b2ea6@dspn-projeto
 REDIS_URL=redis://master.dspn-projeto-cache.qjtido.use1.cache.amazonaws.com:6379
 S3_BUCKET=backend-309843684442-us-east-1-an
 SNS_TOPIC_ARN=arn:aws:sns:us-east-1:309843684442:dspn-projeto-sns
+DYNAMO_TABLE=dspn-projeto-dynamo-logs
+ADMIN_TOKEN=TROQUE_ESTA_SENHA
 AWS_REGION=us-east-1
 EOF
 

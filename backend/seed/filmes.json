@@ -1,0 +1,62 @@
+[
+  {
+    "titulo": "A Odisseia",
+    "ano": 2026,
+    "duracao_min": 173,
+    "sinopse": "Odisseu, o lendário rei de Ítaca, embarca em uma longa e perigosa jornada de volta para casa após a Guerra de Troia, enquanto tenta se reunir com sua esposa, Penélope. Ao longo da viagem, ele precisa enfrentar os caprichos dos deuses, monstros mitológicos e provações que levam sua astúcia e sua humanidade ao limite.",
+    "imdb": "8,4/10",
+    "letterboxd": "4,3/5",
+    "critica": "94%",
+    "poster": "a-odisseia.jpg"
+  },
+  {
+    "titulo": "Homem-Aranha: Um Novo Dia",
+    "ano": 2026,
+    "duracao_min": 145,
+    "sinopse": "Peter Parker combate o crime em tempo integral como Homem-Aranha em um mundo que não se lembra mais dele, e a pressão de ver seus antigos amigos seguirem em frente sem ele provoca em Peter uma mudança que talvez nem ele tenha o poder de controlar. Essa transformação, porém, pode ser a única coisa capaz de deter uma nova ameaça à cidade e às pessoas que ele ama: um poderoso vilão que ninguém consegue enxergar.",
+    "imdb": "8,0/10",
+    "letterboxd": "4,0/5",
+    "critica": "90%",
+    "poster": "homem-aranha-um-novo-dia.jpg"
+  },
+  {
+    "titulo": "Digger",
+    "ano": 2026,
+    "duracao_min": 129,
+    "sinopse": "Tom Cruise interpreta Digger Rockwell, um magnata do petróleo já envelhecido cuja perfuração desencadeia um desastre ecológico. O homem mais poderoso do mundo embarca então em uma missão frenética para provar que é o salvador da humanidade, antes que o desastre provocado por ele destrua tudo.",
+    "imdb": "7,4/10",
+    "letterboxd": "3,9/5",
+    "critica": "52%",
+    "poster": "digger.jpg"
+  },
+  {
+    "titulo": "Da Magia à Sedução: Feitiço de Amor",
+    "ano": 2026,
+    "duracao_min": 130,
+    "sinopse": "Continuação de Da Magia à Sedução (1998), com Sandra Bullock e Nicole Kidman retomando seus papéis. O tempo passou, mas as irmãs Sally e Gillian Owens ainda são assombradas pela maldição da família, segundo a qual todos que elas amam acabam morrendo. Agora, as duas precisam confrontar os poderes que ameaçam acabar com sua família de uma vez por todas.",
+    "imdb": "6,3/10",
+    "letterboxd": "2,9/5",
+    "critica": "36%",
+    "poster": "da-magia-a-seducao-feitico-de-amor.jpg"
+  },
+  {
+    "titulo": "Resident Evil",
+    "ano": 2026,
+    "duracao_min": 94,
+    "sinopse": "Bryan, um tranquilo entregador de órgãos, é enviado para uma entrega noturna no Hospital Geral de Raccoon City. No caminho, por uma estrada montanhosa coberta de neve, ele atropela acidentalmente uma mulher desconhecida, que sobrevive, mas algo está muito errado. Ao tentar ajudar, Bryan se depara com um surto em larga escala de mutações horríveis e monstruosidades criadas por bioengenharia.",
+    "imdb": "7,6/10",
+    "letterboxd": "3,8/5",
+    "critica": "96%",
+    "poster": "resident-evil.jpg"
+  },
+  {
+    "titulo": "A Ilha Esquecida",
+    "ano": 2026,
+    "duracao_min": 109,
+    "sinopse": "Enquanto comemoram sua última noite juntas, as melhores amigas Jo e Raissa, recém-formadas no ensino médio, encontram um portal misterioso que as leva à fantástica ilha de Nakali, repleta das criaturas mágicas e mitológicas das histórias que ouviram de suas famílias filipinas. Ao descobrirem que o preço para voltar para casa são as memórias de toda a sua amizade, as duas precisam correr para deixar a ilha antes que se esqueçam uma da outra para sempre.",
+    "imdb": "7,8/10",
+    "letterboxd": "3,9/5",
+    "critica": "95%",
+    "poster": "a-ilha-esquecida.jpg"
+  }
+]

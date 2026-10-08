@@ -4,7 +4,11 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc && vite build"
+    "build": "vite build",
+    "typecheck": "tsc"
+  },
+  "engines": {
+    "node": "^20.19.0 || >=22.12.0"
   },
   "dependencies": {
     "react": "^19.3.0",

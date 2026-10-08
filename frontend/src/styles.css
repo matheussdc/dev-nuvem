@@ -1,5 +1,4 @@
 :root {
-  --pagina: linear-gradient(180deg, #1a4e8e 0%, #1f86e8 100%);
   --painel: #0b1322;
   --superficie: #101b2e;
   --superficie-2: #13223b;
@@ -17,18 +16,14 @@
 }
 
 * { box-sizing: border-box; }
-body { margin: 0; min-height: 100vh; background: var(--pagina); padding: 48px 24px; }
+body { margin: 0; background: var(--painel); }
 button, input, select, textarea { font: inherit; color: inherit; }
 button { cursor: pointer; background: none; border: 0; }
 button:disabled { cursor: not-allowed; opacity: .5; }
 a { color: var(--destaque); }
 hr { border: 0; border-top: 1px solid var(--borda); margin: 28px 0 24px; }
 
-.painel {
-  max-width: 1400px; margin: 0 auto; padding: 36px 36px 40px;
-  background: var(--painel); border-radius: 44px;
-  box-shadow: 0 30px 80px rgb(0 0 0 / .45);
-}
+.painel { min-height: 100vh; padding: 36px 48px 40px; }
 
 /* topo */
 .topo { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 16px; }

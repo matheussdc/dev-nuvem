@@ -16,6 +16,7 @@ apt-get install -y \
     awscli \
     nginx \
     libpq-dev \
+    fonts-dejavu-core \
     build-essential
 
 # O banco "ingressos" é criado pelo RDS (Initial database name); as tabelas, pela API ao iniciar.

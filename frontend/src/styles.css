@@ -118,6 +118,11 @@ hr { border: 0; border-top: 1px solid var(--borda); margin: 28px 0 24px; }
 .mudo { color: var(--mudo); font-size: 14px; margin: 0; }
 .aviso { margin: 18px 0 0; padding: 12px 16px; border-radius: 10px; background: #3a1820; color: #ffb3b3; font-size: 14px; }
 .aviso.ok { background: #0f3324; color: #9be8c0; }
+.baixar {
+  display: inline-flex; align-items: center; gap: 8px; margin-top: 12px; padding: 10px 18px;
+  border: 1px solid var(--destaque); border-radius: 999px; color: var(--texto); text-decoration: none; font-size: 14px;
+}
+.baixar:hover { background: rgb(43 140 240 / .15); }
 
 .rodape { display: flex; align-items: center; justify-content: space-between; margin-top: 36px; }
 .total { margin: 0; color: var(--mudo); font-size: 18px; }

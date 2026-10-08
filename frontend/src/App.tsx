@@ -1,5 +1,5 @@
 import { FormEvent, useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { api, Assentos, brl, clientId, duracao, erroMsg, Filme } from "./api";
+import { API, api, Assentos, brl, clientId, duracao, erroMsg, Filme } from "./api";
 
 const FILEIRAS = ["G", "F", "E", "D", "C", "B", "A"]; // G perto da tela, como na inspiração
 const LUGARES = Array.from({ length: 16 }, (_, i) => i + 1);
@@ -53,6 +53,7 @@ export default function App() {
   const [assentos, setAssentos] = useState<Assentos>(VAZIO);
   const [busca, setBusca] = useState<string>();
   const [aviso, setAviso] = useState<{ texto: string; ok?: boolean }>();
+  const [pdf, setPdf] = useState<string>(); // link do último ingresso comprado
   const dialogo = useRef<HTMLDialogElement>(null);
 
   useEffect(() => {
@@ -100,11 +101,12 @@ export default function App() {
     if (!sessao) return;
     const f = new FormData(e.currentTarget);
     try {
-      const r = await api<{ assentos: string[]; total: number }>("/compras", {
+      const r = await api<{ assentos: string[]; total: number; pdf_url: string }>("/compras", {
         method: "POST",
         body: JSON.stringify({ sessao_id: sessao.id, assentos: meus, nome: f.get("nome"), email: f.get("email"), client_id: clientId }),
       });
       setAviso({ ok: true, texto: `Compra confirmada: ${r.assentos.join(", ")} · ${brl(r.total)}` });
+      setPdf(API + r.pdf_url);
       dialogo.current?.close();
     } catch (err) {
       setAviso({ texto: erroMsg(err) });
@@ -212,6 +214,7 @@ export default function App() {
           </div>
 
           {aviso && <p className={`aviso ${aviso.ok ? "ok" : ""}`}>{aviso.texto}</p>}
+          {pdf && <a className="baixar" href={pdf}><Icone nome="ingresso" tamanho={16} /> Baixar ingresso (PDF)</a>}
 
           <div className="rodape">
             <p className="total">Total - <span>{brl(total)}</span></p>

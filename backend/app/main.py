@@ -1,3 +1,4 @@
+import hmac
 import json
 import os
 import secrets
@@ -11,7 +12,7 @@ from typing import Annotated, List, Optional
 
 import boto3
 import redis
-from fastapi import Depends, FastAPI, File, Form, Header, HTTPException, UploadFile
+from fastapi import Depends, FastAPI, File, Form, Header, HTTPException, Response, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 from sqlalchemy import select
@@ -20,6 +21,7 @@ from sqlalchemy.orm import Session
 
 from app.config import settings
 from app.database import Base, Filme, Ingresso, Sessao, engine, get_db
+from app.pdf import gerar_pdf
 
 s3 = boto3.client("s3", region_name=settings.AWS_REGION)
 sns = boto3.client("sns", region_name=settings.AWS_REGION)
@@ -185,13 +187,47 @@ def comprar(c: CompraIn, db: Session = Depends(get_db)):
     chaves = [chave(c.sessao_id, a) for a in escolhidos]
     if any(dono != c.client_id for dono in cache.mget(chaves)):
         raise HTTPException(409, "Sua reserva expirou. Selecione os assentos de novo.")
-    db.add_all([Ingresso(sessao_id=c.sessao_id, assento=a, nome=c.nome, email=c.email) for a in escolhidos])
+    novos = [Ingresso(sessao_id=c.sessao_id, assento=a, nome=c.nome, email=c.email) for a in escolhidos]
+    db.add_all(novos)
     commit(db, "Um dos assentos já foi vendido")
     cache.delete(*chaves)
     total = float(sessao.preco) * len(escolhidos)
-    log("CREATE", "ingresso", {"sessao_id": c.sessao_id, "assentos": escolhidos, "nome": c.nome,
+    ids = sorted(i.id for i in novos)
+    log("CREATE", "ingresso", {"ids": ids, "sessao_id": c.sessao_id, "assentos": escolhidos, "nome": c.nome,
                                "email": c.email, "total": total})
-    return {"ok": True, "assentos": escolhidos, "total": total}
+    lista = ",".join(map(str, ids))
+    return {"ok": True, "assentos": escolhidos, "total": total,
+            "pdf_url": f"/ingressos/pdf?ids={lista}&token={assinatura(lista)}"}
+
+
+def assinatura(ids: str) -> str:
+    """Link do PDF assinado: só quem fez a compra recebe um token válido para esses ids."""
+    # ponytail: reaproveita ADMIN_TOKEN como chave do HMAC; separe em outro segredo se ele for trocado com frequência
+    return hmac.new(settings.ADMIN_TOKEN.encode(), ids.encode(), "sha256").hexdigest()[:32]
+
+
+@app.get("/ingressos/pdf")
+def ingresso_pdf(ids: str, token: str, db: Session = Depends(get_db)):
+    if not hmac.compare_digest(token, assinatura(ids)):
+        raise HTTPException(403, "Link de ingresso inválido")
+    lista = [int(i) for i in ids.split(",")]
+    linhas = db.execute(
+        select(Ingresso, Sessao, Filme)
+        .join(Sessao, Ingresso.sessao_id == Sessao.id)
+        .join(Filme, Sessao.filme_id == Filme.id)
+        .where(Ingresso.id.in_(lista))
+    ).all()
+    if not linhas:
+        raise HTTPException(404, "Ingresso não encontrado")
+    linhas.sort(key=lambda l: (l[0].assento[0], int(l[0].assento[1:])))
+    filme = linhas[0][2]
+    try:
+        poster = s3.get_object(Bucket=settings.S3_BUCKET, Key=filme.poster_key)["Body"].read()
+    except Exception:  # sem pôster o ingresso continua válido
+        poster = None
+    log("READ", "ingresso_pdf", {"ids": lista})
+    return Response(gerar_pdf(poster, linhas), media_type="application/pdf",
+                    headers={"Content-Disposition": f'attachment; filename="ingresso-cinematix-{lista[0]}.pdf"'})
 
 
 # ---------- admin: filmes ----------

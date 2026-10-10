@@ -133,3 +133,17 @@ A infraestrutura foi implementada dentro de uma **Amazon VPC**, segregando a cam
 └── scripts/
     ├── deploy-backend.sh         # Script de atualização da API via SSH
     └── deploy-frontend.sh        # Script de build e sync do Frontend no S3
+
+DATABASE_URL=postgresql+psycopg://postgres:SUA_SENHA@ENDPOINT-RDS.rds.amazonaws.com:5432/ingressos
+REDIS_URL=redis://ENDPOINT-REDIS.cache.amazonaws.com:6379
+S3_BUCKET=seu-bucket-s3
+SNS_TOPIC_ARN=arn:aws:sns:us-east-1:123456789012:dspn-projeto-sns
+DYNAMO_TABLE=dspn-projeto-dynamo-logs
+ADMIN_TOKEN=senha_segura_admin
+AWS_REGION=us-east-1
+
+S3_BUCKET=seu-bucket-s3
+SQS_URL=[https://sqs.us-east-1.amazonaws.com/123456789012/dspn-projeto-queue](https://sqs.us-east-1.amazonaws.com/123456789012/dspn-projeto-queue)
+DYNAMO_TABLE=dspn-projeto-dynamo-logs
+AWS_REGION=us-east-1
+

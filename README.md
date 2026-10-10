@@ -196,36 +196,36 @@ Conecta via SSH na instância, executa git pull, atualiza dependências do Pytho
 
 ## 3. Execução Local para Desenvolvimento Backend (FastAPI)
 
-* 1. Acesse o diretório do backend e crie o ambiente virtual:
+1. Acesse o diretório do backend e crie o ambiente virtual:
   cd backend
   python -m venv venv
   source venv/bin/activate  # Windows: venv\Scripts\activate
-* 2. Instale as dependências:
+2. Instale as dependências:
   pip install -r requirements.txt
-* 3. Instale o pacote de fontes para geração de PDFs (Linux):
+3. Instale o pacote de fontes para geração de PDFs (Linux):
   sudo apt-get install -y fonts-dejavu-core
-* 4. Popule o banco e o bucket S3 (opcional):
+4. Popule o banco e o bucket S3 (opcional):
   python -m app.seed
-* 5. Inicie a API:
+5. Inicie a API:
   uvicorn app.main:app --reload --port 8000
 
 Worker (Redimensionador de Imagens)
 
-* 1. Em um novo terminal, acesse a pasta do worker:
+1. Em um novo terminal, acesse a pasta do worker:
   cd worker
   pip install -r requirements.txt
 
-* 2. Inicie o worker:
+2. Inicie o worker:
   python worker.py
 
 Frontend (React + TypeScript)
 
-* 1. Acesse a pasta do frontend e instale as dependências Node:
+1. Acesse a pasta do frontend e instale as dependências Node:
   cd frontend
   npm install
-* 2. Inicie o servidor local:
+2. Inicie o servidor local:
   npm run dev
-* 3. Rotas de acesso:
+3. Rotas de acesso:
   Bilheteria Pública: http://localhost:5173/
   Painel Administrativo: http://localhost:5173/#/admin
 

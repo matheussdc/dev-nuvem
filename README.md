@@ -194,60 +194,79 @@ Injeta a URL do ALB na variável VITE_API_URL, compila os arquivos do React e si
   
 Conecta via SSH na instância, executa git pull, atualiza dependências do Python e reinicia o serviço no systemd.
 
-## 3. Execução Local para Desenvolvimento Backend (FastAPI)
+## 3. Execução Local para Desenvolvimento 
+
+#### Backend (FastAPI)
 
 1. Acesse o diretório do backend e crie o ambiente virtual:
+  ```bash
   cd backend
   python -m venv venv
   source venv/bin/activate  # Windows: venv\Scripts\activate
+```
 2. Instale as dependências:
-  pip install -r requirements.txt
+  ```bash
+   pip install -r requirements.txt
+```
 3. Instale o pacote de fontes para geração de PDFs (Linux):
+  ```bash
   sudo apt-get install -y fonts-dejavu-core
+```
 4. Popule o banco e o bucket S3 (opcional):
+  ```bash
   python -m app.seed
+```
 5. Inicie a API:
+  ```bash
   uvicorn app.main:app --reload --port 8000
+```
 
-Worker (Redimensionador de Imagens)
+#### Worker (Redimensionador de Imagens)
 
 1. Em um novo terminal, acesse a pasta do worker:
+  ```bash
   cd worker
   pip install -r requirements.txt
+```
 
 2. Inicie o worker:
-  python worker.py
-
-Frontend (React + TypeScript)
+  ```bash
+   python worker.py
+```
+#### Frontend (React + TypeScript)
 
 1. Acesse a pasta do frontend e instale as dependências Node:
-  cd frontend
-  npm install
+  ```bash
+   cd frontend
+   npm install
+```
 2. Inicie o servidor local:
-  npm run dev
+  ```bash
+   npm run dev
+```
 3. Rotas de acesso:
-  Bilheteria Pública: http://localhost:5173/
-  Painel Administrativo: http://localhost:5173/#/admin
+   
+  **Bilheteria Pública**: `http://localhost:5173/`
+   
+  **Painel Administrativo**: `http://localhost:5173/#/admin`
 
 # 🧪 Testes e Validações
 ## Teste de Fumaça (Smoke Test)
 
 * Para validar o fluxo de ponta a ponta usando instâncias locais do PostgreSQL e Redis (com mocks automatizados das chamadas da AWS):
 
-cd backend
-DATABASE_URL=postgresql+psycopg://postgres:postgres@localhost:5432/postgres \
-REDIS_URL=redis://localhost:6379 \
-python test_app.py
 
-## Validação do Auto Scaling:
+```bash
+ cd backend
+ DATABASE_URL=postgresql+psycopg://postgres:postgres@localhost:5432/postgres \
+ REDIS_URL=redis://localhost:6379 \
+ python test_app.py
+```
 
-1. Acesse o painel admin em /#/admin.
+## Validação do Auto Scaling
 
-2. Clique na aba "Stress de CPU".
-
-3. Defina a duração (ex: 180 segundos) e clique em "Gerar carga".
-
+1. Acesse o painel admin em `/#/admin`.
+2. Clique na aba **"Stress de CPU"**.
+3. Defina a duração (ex: 180 segundos) e clique em **"Gerar carga"**.
 4. O backend ocupará 100% de uso de vCPU, permitindo acompanhar o aumento do tráfego nos alarmes do CloudWatch e o acionamento de novas instâncias EC2 pelo Auto Scaling Group.
-
-
   

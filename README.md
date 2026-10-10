@@ -183,12 +183,14 @@ Worker (launch templates/worker.sh):
   
 ## 2. Automação de Deploys (scripts/)
 * Deploy do Frontend para o S3:
-  ./scripts/deploy-frontend.sh <DNS-DO-ALB> <NOME-DO-BUCKET-FRONTEND>
+  
+  `./scripts/deploy-frontend.sh <DNS-DO-ALB> <NOME-DO-BUCKET-FRONTEND>`
 
 Injeta a URL do ALB na variável VITE_API_URL, compila os arquivos do React e sincroniza com o bucket S3.
 
 * Deploy do Backend na EC2:
-  ./scripts/deploy-backend.sh <IP_DA_EC2>
+  
+  `./scripts/deploy-backend.sh <IP_DA_EC2>`
   
 Conecta via SSH na instância, executa git pull, atualiza dependências do Python e reinicia o serviço no systemd.
 

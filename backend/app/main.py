@@ -105,6 +105,9 @@ def chave(sid: int, assento: str) -> str:
 def invalidar_catalogo():
     cache.delete("catalogo")
 
+def assinatura(ids: str) -> str:
+    """Link do PDF assinado: só quem fez a compra recebe um token válido para esses ids."""
+    return hmac.new(settings.ADMIN_TOKEN.encode(), ids.encode(), "sha256").hexdigest()[:32]
 
 # ---------- público ----------
 

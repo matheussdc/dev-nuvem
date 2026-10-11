@@ -2,21 +2,21 @@
 import textwrap
 from functools import lru_cache
 from io import BytesIO
-
 from PIL import Image, ImageDraw, ImageFont
 
 FUNDO, CARTAO, BORDA = (11, 19, 34), (16, 27, 46), (29, 44, 70)
 TEXTO, MUDO, DESTAQUE = (232, 238, 248), (127, 139, 163), (43, 140, 240)
 LARGURA, ALTURA = 1800, 760
-FONTES = "/usr/share/fonts/truetype/dejavu/"  # pacote fonts-dejavu-core (backend.sh instala)
+FONTES = "/usr/share/fonts/truetype/dejavu/"
 
 
 @lru_cache
 def _fonte(tamanho, negrito=False):
     try:
-        return ImageFont.truetype(FONTES + ("DejaVuSans-Bold.ttf" if negrito else "DejaVuSans.ttf"), tamanho)
+        nome = "DejaVuSans-Bold.ttf" if negrito else "DejaVuSans.ttf"
+        return ImageFont.truetype(FONTES + nome, tamanho)
     except OSError:
-        return ImageFont.load_default(size=tamanho)  # fallback sem acentos
+        return ImageFont.load_default(size=tamanho)
 
 
 def _brl(valor):
@@ -39,45 +39,74 @@ def _pagina(poster, filme, sessao, ingresso):
 
     x = 560
     d.text((x, 70), "CINEMATIX  ·  INGRESSO", font=_fonte(26, True), fill=DESTAQUE)
+
     y = 118
-    for linha in textwrap.wrap(filme.titulo, 22)[:2]:
+    for linha in textwrap.wrap(filme['titulo'], 22)[:2]:
         d.text((x, y), linha, font=_fonte(56, True), fill=TEXTO)
         y += 70
-    meta = "  ·  ".join(filter(None, [str(filme.ano or ""), _duracao(filme.duracao_min)]))
+
+    meta = "  ·  ".join(filter(None, [
+        str(filme.get('ano') or ""),
+        _duracao(filme.get('duracao_min'))
+    ]))
     d.text((x, y + 8), meta, font=_fonte(28), fill=MUDO)
 
-    campos = [(0, "DATA", sessao.data.strftime("%d/%m/%Y")), (290, "HORÁRIO", sessao.hora.strftime("%H:%M")),
-              (490, "FILEIRA", ingresso.assento[0]), (660, "ASSENTO", ingresso.assento[1:].zfill(2))]
+    # Formata data/hora (vem como string ISO do JSON)
+    data_str = sessao['data']  # "2026-10-15"
+    hora_str = sessao['hora']  # "19:00"
+    data_fmt = f"{data_str[8:10]}/{data_str[5:7]}/{data_str[0:4]}"
+
+    campos = [
+        (0, "DATA", data_fmt),
+        (290, "HORÁRIO", hora_str),
+        (490, "FILEIRA", ingresso['assento'][0]),
+        (660, "ASSENTO", ingresso['assento'][1:].zfill(2))
+    ]
     for dx, rotulo, valor in campos:
         d.text((x + dx, 400), rotulo, font=_fonte(22), fill=MUDO)
         d.text((x + dx, 435), valor, font=_fonte(40, True), fill=TEXTO)
-    d.text((x, 545), "COMPRADOR", font=_fonte(22), fill=MUDO)
-    d.text((x, 580), ingresso.nome[:28], font=_fonte(32), fill=TEXTO)
-    d.text((x + 660, 545), "VALOR", font=_fonte(22), fill=MUDO)
-    d.text((x + 660, 580), _brl(sessao.preco), font=_fonte(32), fill=TEXTO)
 
-    # canhoto destacável
+    d.text((x, 545), "COMPRADOR", font=_fonte(22), fill=MUDO)
+    d.text((x, 580), ingresso['nome'][:28], font=_fonte(32), fill=TEXTO)
+
+    d.text((x + 660, 545), "VALOR", font=_fonte(22), fill=MUDO)
+    d.text((x + 660, 580), _brl(sessao['preco']), font=_fonte(32), fill=TEXTO)
+
+    # Canhoto destacável
     cx = LARGURA - 330
     for yy in range(50, ALTURA - 50, 26):
         d.line((cx, yy, cx, yy + 13), fill=BORDA, width=3)
+
     centro = cx + 150
     d.text((centro, 230), "ASSENTO", anchor="mm", font=_fonte(24), fill=MUDO)
-    d.text((centro, 330), ingresso.assento, anchor="mm", font=_fonte(110, True), fill=DESTAQUE)
-    d.text((centro, 460), f"Nº {ingresso.id:06d}", anchor="mm", font=_fonte(30), fill=TEXTO)
-    d.text((centro, 510), sessao.data.strftime("%d/%m") + "  " + sessao.hora.strftime("%H:%M"),
+    d.text((centro, 330), ingresso['assento'], anchor="mm", font=_fonte(110, True), fill=DESTAQUE)
+    d.text((centro, 460), f"Nº {ingresso['id']:06d}", anchor="mm", font=_fonte(30), fill=TEXTO)
+    d.text((centro, 510), f"{data_str[8:10]}/{data_str[5:7]}  {hora_str}",
            anchor="mm", font=_fonte(26), fill=MUDO)
+
     return img
 
 
-def gerar_pdf(poster_bytes, linhas):
-    """linhas: [(Ingresso, Sessao, Filme)]. Sem pôster legível, o ingresso sai sem a imagem."""
+def gerar_pdf(poster_bytes: bytes | None, linhas: list) -> bytes:
+    """
+    Gera PDF com uma página por ingresso.
+
+    Args:
+        poster_bytes: Conteúdo do pôster (ou None)
+        linhas: Lista de dicts com chaves 'ingresso', 'sessao', 'filme'
+
+    Returns:
+        bytes do PDF gerado
+    """
     poster = None
     if poster_bytes:
         try:
             poster = Image.open(BytesIO(poster_bytes)).convert("RGB")
         except OSError:
             pass
-    paginas = [_pagina(poster, f, s, i) for i, s, f in linhas]
+
+    paginas = [_pagina(poster, l['filme'], l['sessao'], l['ingresso']) for l in linhas]
+
     buf = BytesIO()
     paginas[0].save(buf, "PDF", resolution=200, save_all=True, append_images=paginas[1:])
     return buf.getvalue()

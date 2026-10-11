@@ -1,27 +1,29 @@
 #!/bin/bash
 # /scripts/user-data-worker.sh
 
+set -ex
+exec > >(tee /var/log/user-data.log) 2>&1
+echo "=== Iniciando setup do worker: $(date) ==="
+
 # Atualiza pacotes
+export DEBIAN_FRONTEND=noninteractive
 apt-get update -y
 apt-get upgrade -y
 
 # Instala dependências
-apt-get install -y python3-pip python3-venv git awscli
+apt-get install -y python3-pip python3-venv git awscli fonts-dejavu-core
 
 # Cria diretório da aplicação
-mkdir -p /opt/worker
-cd /opt/worker
-
-# Clona o repositório
-git clone https://github.com/matheussdc/dev-nuvem.git .
+cd /opt
+rm -rf worker
+git clone https://github.com/matheussdc/dev-nuvem.git worker-tmp
+mv worker-tmp/worker /opt/worker
+rm -rf worker-tmp
 
 # Cria virtual environment
-python3 -m venv venv
-source venv/bin/activate
-
-# Instala dependências do worker
-cd worker
-pip install -r requirements.txt
+python3 -m venv /opt/worker/venv
+/opt/worker/venv/bin/pip install --upgrade pip
+/opt/worker/venv/bin/pip install -r /opt/worker/requirements.txt
 
 # Cria arquivo de ambiente
 cat > /opt/worker/.env << EOF
@@ -32,7 +34,7 @@ AWS_REGION=us-east-1
 EOF
 
 # Configura systemd service para o worker
-cat > /etc/systemd/system/worker.service << EOF
+cat > /etc/systemd/system/worker.service << 'EOF'
 [Unit]
 Description=Worker de Processamento Assíncrono (SQS)
 After=network.target
@@ -40,7 +42,7 @@ After=network.target
 [Service]
 Type=simple
 User=ubuntu
-WorkingDirectory=/opt/worker/worker
+WorkingDirectory=/opt/worker
 EnvironmentFile=/opt/worker/.env
 ExecStart=/opt/worker/venv/bin/python worker.py
 Restart=always

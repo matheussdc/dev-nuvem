@@ -100,18 +100,76 @@ export default function App() {
     e.preventDefault();
     if (!sessao) return;
     const f = new FormData(e.currentTarget);
+
     try {
+      // 1. Faz a compra
       const r = await api<{ assentos: string[]; total: number; pdf_url: string }>("/compras", {
         method: "POST",
-        body: JSON.stringify({ sessao_id: sessao.id, assentos: meus, nome: f.get("nome"), email: f.get("email"), client_id: clientId }),
+        body: JSON.stringify({
+          sessao_id: sessao.id,
+          assentos: meus,
+          nome: f.get("nome"),
+          email: f.get("email"),
+          client_id: clientId
+        }),
       });
-      setAviso({ ok: true, texto: `Compra confirmada: ${r.assentos.join(", ")} · ${brl(r.total)}` });
-      setPdf(API + r.pdf_url);
+
+      setAviso({ ok: true, texto: "✅ Compra confirmada! Gerando seu ingresso..." });
       dialogo.current?.close();
+
+      // 2. Monta a URL completa do PDF
+      const pdfCompleta = API + r.pdf_url;
+      setPdf(pdfCompleta);
+
+      // 3. Faz polling até o PDF estar pronto (máx 30 segundos)
+      const maxTentativas = 15; // 15 x 2s = 30s
+      let pdfPronto = false;
+
+      for (let i = 0; i < maxTentativas; i++) {
+        await new Promise(resolve => setTimeout(resolve, 2000)); // espera 2s
+
+        try {
+          const resposta = await fetch(pdfCompleta, { method: "HEAD" });
+
+          if (resposta.ok) {
+            pdfPronto = true;
+            setAviso({
+              ok: true,
+              texto: `✅ Ingresso pronto! ${r.assentos.join(", ")} · ${brl(r.total)}`
+            });
+
+            // 4. Abre o PDF automaticamente em nova aba
+            window.open(pdfCompleta, "_blank");
+            break;
+          } else if (resposta.status === 202) {
+            // Ainda gerando, continua o polling
+            setAviso({
+              ok: true,
+              texto: `⏳ Gerando seu ingresso... (${i + 1}/${maxTentativas})`
+            });
+          } else {
+            // Erro inesperado
+            break;
+          }
+        } catch (err) {
+          // Erro de rede, continua tentando
+          console.error("Erro no polling:", err);
+        }
+      }
+
+      // 5. Se não ficou pronto em 30s, avisa o usuário
+      if (!pdfPronto) {
+        setAviso({
+          ok: false,
+          texto: "⚠️ Seu ingresso está sendo gerado. Use o botão abaixo para baixar em instantes."
+        });
+      }
+
     } catch (err) {
       setAviso({ texto: erroMsg(err) });
       dialogo.current?.close();
     }
+
     carregarAssentos();
   }
 
@@ -213,7 +271,12 @@ export default function App() {
             {meus.length === 0 && <p className="mudo">Escolha seus lugares no mapa. A reserva vale por 5 minutos.</p>}
           </div>
 
-          {aviso && <p className={`aviso ${aviso.ok ? "ok" : ""}`}>{aviso.texto}</p>}
+          {aviso && (
+            <p className={`aviso ${aviso.ok ? "ok" : ""}`}>
+              {aviso.texto.includes("Gerando") && <span className="spinner"></span>}
+              {aviso.texto}
+            </p>
+          )}
           {pdf && <a className="baixar" href={pdf}><Icone nome="ingresso" tamanho={16} /> Baixar ingresso (PDF)</a>}
 
           <div className="rodape">

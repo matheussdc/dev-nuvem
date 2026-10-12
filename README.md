@@ -20,24 +20,58 @@ A infraestrutura foi implementada dentro de uma **Amazon VPC**, segregando a cam
 
 
 ```mermaid
-graph TD
-    Client[Espectador / Admin] --> S3Front[Amazon S3 - Frontend Estático]
-    S3Front -->|Requisições HTTP/API| ALB[Application Load Balancer]
-    ALB --> ASG[Auto Scaling Group - FastAPI + Nginx]
 
-    subgraph Private_Subnet [Private Subnet]
-        RDS[(Amazon RDS PostgreSQL)]
-        Redis[(ElastiCache Redis)]
+flowchart TD
+    U[Espectador / Administrador]
+
+    subgraph AWS["AWS Cloud"]
+        subgraph VPC["Amazon VPC"]
+            S3F["Amazon S3<br/>Frontend estático"]
+            ALB["Application Load Balancer"]
+
+            subgraph PUB["Sub-rede pública"]
+                ASG["Auto Scaling Group"]
+                EC2["EC2: Nginx + Uvicorn + FastAPI"]
+            end
+
+            subgraph PRIV["Sub-rede privada"]
+                RDS[("Amazon RDS<br/>PostgreSQL")]
+                REDIS[("Amazon ElastiCache<br/>Redis")]
+            end
+
+            SNS["Amazon SNS"]
+            SQS["Amazon SQS"]
+            WORKER["Worker EC2"]
+            S3A["Amazon S3<br/>Pôsteres, thumbnails e PDFs"]
+            DDB[("Amazon DynamoDB<br/>Auditoria")]
+        end
     end
 
-    ASG --> Private_Subnet
-    ASG --> Dynamo[(Amazon DynamoDB - Logs)]
-    ASG --> SNS[Amazon SNS Topic]
+    U -->|"HTTPS: carrega o site"| S3F
+    U -->|"HTTP(S): chamadas da API"| ALB
+    ALB --> ASG
+    ASG --> EC2
 
-    SNS --> SQS[Amazon SQS Queue]
-    SQS --> Worker[Worker EC2]
-    Worker --> S3Assets[Amazon S3 - Posters, Thumbs & PDFs]
-    Worker --> Dynamo
+    EC2 --> RDS
+    EC2 --> REDIS
+    EC2 -->|"Publica eventos de upload"| SNS
+    SNS -->|"Assinatura do tópico"| SQS
+    SQS --> WORKER
+    WORKER --> S3A
+    EC2 -.->|"Registros de auditoria"| DDB
+    WORKER -.->|"Registros de processamento"| DDB
+
+    classDef frontend fill:#e8f5e9,stroke:#388e3c,color:#1b5e20
+    classDef network fill:#e3f2fd,stroke:#1976d2,color:#0d47a1
+    classDef compute fill:#fff3e0,stroke:#ef6c00,color:#e65100
+    classDef storage fill:#ede7f6,stroke:#673ab7,color:#311b92
+    classDef messaging fill:#fce4ec,stroke:#c2185b,color:#880e4f
+
+    class S3F,S3A frontend
+    class ALB network
+    class ASG,EC2,WORKER compute
+    class RDS,REDIS,DDB storage
+    class SNS,SQS messaging
 ```
 
 
